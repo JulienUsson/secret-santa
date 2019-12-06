@@ -3,6 +3,7 @@ node_modules
 
 # code editor
 .idea
+.vscode
 
 # env
 .env
