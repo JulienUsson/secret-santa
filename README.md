@@ -10,7 +10,9 @@ This app choose secret santa for each people and send them mail to keep it secre
 | MAIL_PORT     |                   465                    |                    Mail server port |
 | MAIL_USER     |                    /                     |                Mail server username |
 | MAIL_PASSWORD |                    /                     |                Mail server password |
-| TEMPLATE      | You are the secret santa of {{people}} ! |                        Mail content |
+| MAIL_SUBJECT  |            🎅 Secret Santa 🎅            |                        Mail content |
+| MAIL_CONTENT  | You are the secret santa of {{people}} ! |                        Mail content |
+| SAVE_MAILS    |                  false                   |     save mails in `mails` directory |
 | DEBUG         |                  false                   | Print mails instead of sending them |
 
 ## Run
