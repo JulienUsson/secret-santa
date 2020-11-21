@@ -5,7 +5,7 @@ function isShuffleOk(santas) {
   for (let i = 0; i < santas.length; i++) {
     const santa = santas[i];
     const santasPeople = santas[(i + 1) % santas.length];
-    if (santa.blacklist.includes(santasPeople.email)) {
+    if (santa.blacklist.includes(santasPeople.email) || santa.blacklist.includes(santasPeople.name)) {
       return false;
     }
   }

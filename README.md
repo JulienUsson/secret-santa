@@ -18,7 +18,7 @@ This app choose secret santa for each people and send them mail to keep it secre
 ## Run
 
 - Add environment variables MAIL_HOST, MAIL_USER, MAIL_PASS (.env file supported)
-- Add a santas.csv file (name;email;[blacklist]) at root.
+- Add a santas.csv file (name;email;blacklist) at root. (Blacklist is the list of names or emails separated with `,` and is optional)
 - Run `yarn start`
 
 ## Debug
