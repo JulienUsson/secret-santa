@@ -11,3 +11,6 @@ node_modules
 # data
 santas.csv
 mails
+
+#direnv
+.direnv
