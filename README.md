@@ -7,13 +7,13 @@ Everyone is placed in a single gift loop (A → B → C → … → A), so nobod
 ## Install
 
 ```sh
-yarn install
+npm install
 ```
 
 ## Web interface
 
 ```sh
-yarn gui
+npm run gui
 ```
 
 Then open http://localhost:3000. From there you can:
@@ -31,7 +31,7 @@ SMTP settings are prefilled from the environment variables below. The password i
 
 - Add environment variables MAIL_HOST, MAIL_USER, MAIL_PASSWORD (.env file supported)
 - Add a santas.csv file (name;email;blacklist) at root. (Blacklist is the list of names or emails separated with `,` and is optional)
-- Run `yarn start`
+- Run `npm start`
 
 Example `santas.csv`:
 
@@ -70,10 +70,10 @@ Templates use [Mustache](https://mustache.github.io/): `{{people}}` is the perso
 
 - Add environment variables DEBUG=true (.env file supported)
 - Add a santas.csv file (name;email) at root.
-- Run `yarn start`
+- Run `npm start`
 
 ## Tests
 
 ```sh
-yarn test
+npm test
 ```
