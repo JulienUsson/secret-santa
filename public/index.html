@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secret Santa</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎅</text></svg>" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>🎅 Secret Santa</h1>
+      <p class="subtitle">Draw names, send secret mails, keep the surprise.</p>
+    </header>
+
+    <main>
+      <section class="card" id="participants-section">
+        <div class="card-header">
+          <h2><span class="step">1</span> Participants <span class="count" id="participant-count"></span></h2>
+          <div class="actions">
+            <label class="button secondary">
+              Import CSV
+              <input type="file" id="import-csv" accept=".csv,text/csv,text/plain" hidden />
+            </label>
+            <button class="secondary" id="save-participants">Save to <code id="santas-file">santas.csv</code></button>
+          </div>
+        </div>
+
+        <table class="participants">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Can't draw</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="participants-body"></tbody>
+        </table>
+
+        <form id="add-participant" class="add-row">
+          <input name="name" placeholder="Name" required autocomplete="off" />
+          <input name="email" type="email" placeholder="email@example.com" required autocomplete="off" />
+          <button type="submit">+ Add</button>
+        </form>
+
+        <label class="inline">
+          <input type="checkbox" id="mutual" checked />
+          Exclusions apply both ways (e.g. couples)
+        </label>
+
+        <div id="check-status" class="status"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2><span class="step">2</span> Message</h2>
+        </div>
+        <div class="grid two">
+          <div class="fields">
+            <label>From <input id="mail-from" /></label>
+            <label>Subject <input id="mail-subject" /></label>
+            <label>
+              Content
+              <textarea id="mail-content" rows="8"></textarea>
+            </label>
+            <p class="hint">
+              Variables: <code>{{people}}</code> the person to gift, <code>{{santa}}</code> the person reading the mail.
+            </p>
+          </div>
+          <div>
+            <div class="preview-label">Preview</div>
+            <div class="mail-preview" id="mail-preview">
+              <div class="mail-meta"><strong>To:</strong> <span id="preview-to"></span></div>
+              <div class="mail-meta"><strong>Subject:</strong> <span id="preview-subject"></span></div>
+              <pre id="preview-text"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2><span class="step">3</span> Mail server</h2>
+          <button class="secondary" id="test-smtp">Test connection</button>
+        </div>
+        <div class="grid smtp">
+          <label>Host <input id="smtp-host" placeholder="smtp.example.com" /></label>
+          <label>Port <input id="smtp-port" type="number" /></label>
+          <label class="inline"><input type="checkbox" id="smtp-secure" /> TLS</label>
+          <label>User <input id="smtp-user" autocomplete="off" /></label>
+          <label>Password <input id="smtp-password" type="password" autocomplete="new-password" /></label>
+        </div>
+        <div id="smtp-status" class="status"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2><span class="step">4</span> Draw &amp; send</h2>
+        </div>
+        <label class="inline">
+          <input type="checkbox" id="save-mails" />
+          Keep a copy of each mail in <code>mails/</code> (handy if someone loses theirs)
+        </label>
+        <div class="send-actions">
+          <button class="secondary" id="dry-run">Dry run</button>
+          <button class="primary" id="send">🎁 Draw &amp; send mails</button>
+        </div>
+        <div id="send-status" class="status"></div>
+        <div id="dry-run-result" hidden>
+          <p class="hint">
+            The draw is hidden so the organizer can play too.
+            <button class="link" id="reveal">Reveal results</button>
+          </p>
+          <ul class="mails spoiler" id="dry-run-mails"></ul>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="confirm-dialog">
+      <form method="dialog">
+        <h3>Send the mails?</h3>
+        <p id="confirm-text"></p>
+        <div class="send-actions">
+          <button value="cancel" class="secondary">Cancel</button>
+          <button value="ok" class="primary">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

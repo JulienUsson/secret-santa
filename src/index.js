@@ -1,15 +1,34 @@
 require("dotenv").config();
-const getShuffledSantas = require("./getShuffledSantas");
-const generateMails = require("./generateMails");
-const sendMails = require("./sendMails");
+const { getConfig } = require("./config");
+const { readParticipants } = require("./participants");
+const { run } = require("./secretSanta");
 
-const isDebug = process.env.DEBUG && process.env.DEBUG.toLowerCase() === "true";
+async function main() {
+  const config = getConfig();
+  const participants = readParticipants(config.santasFile);
 
-const santas = getShuffledSantas();
-const mails = generateMails(santas);
+  const { warnings, mails, results } = await run(participants, {
+    template: config.mail,
+    smtp: config.smtp,
+    dryRun: config.debug,
+    save: config.saveMails,
+    mailsDir: config.mailsDir
+  });
 
-if (isDebug) {
-  console.log(mails);
-} else {
-  sendMails(mails);
+  warnings.forEach(warning => console.warn(`⚠️  ${warning}`));
+
+  if (mails) {
+    console.log(mails);
+    return;
+  }
+
+  results.forEach(r => console.log(r.ok ? `✅ ${r.to}` : `❌ ${r.to}: ${r.error}`));
+  if (results.some(r => !r.ok)) {
+    process.exitCode = 1;
+  }
 }
+
+main().catch(error => {
+  console.error(`❌ ${error.message}`);
+  process.exitCode = 1;
+});
