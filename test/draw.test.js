@@ -22,6 +22,16 @@ test("everyone gives and receives exactly once", () => {
   }
 });
 
+test("assignments follow the participants order so the cycle can't be guessed", () => {
+  const participants = people(6);
+  for (let i = 0; i < 20; i++) {
+    assert.deepStrictEqual(
+      draw(participants).map(a => a.santa),
+      participants
+    );
+  }
+});
+
 test("blacklist by name or email is respected, case-insensitively", () => {
   const participants = people(5);
   participants[0].blacklist = ["p1", "P2@EXAMPLE.COM"];

@@ -2,7 +2,8 @@ const $ = selector => document.querySelector(selector);
 
 const state = {
   participants: [],
-  dirty: false
+  dirty: false,
+  lastDraw: null
 };
 
 const storage = {
@@ -251,7 +252,9 @@ function readTemplate() {
   return {
     from: $("#mail-from").value,
     subject: $("#mail-subject").value,
-    content: $("#mail-content").value
+    content: $("#mail-content").value,
+    budget: $("#mail-budget").value,
+    date: $("#mail-date").value
   };
 }
 
@@ -278,7 +281,92 @@ const updatePreview = debounce(async () => {
   $("#preview-to").textContent = mail.to;
   $("#preview-subject").textContent = mail.subject;
   $("#preview-text").textContent = mail.text;
+  $("#preview-html").srcdoc = mail.html;
 }, 200);
+
+function fitPreview() {
+  const frame = $("#preview-html");
+  const doc = frame.contentDocument;
+  if (doc && doc.body) {
+    frame.style.height = `${doc.documentElement.scrollHeight}px`;
+  }
+}
+
+function showPreview(kind) {
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.preview === kind));
+  $("#preview-html").hidden = kind !== "html";
+  $("#preview-text").hidden = kind !== "text";
+  storage.set("preview", kind);
+  fitPreview();
+}
+
+const statusLabels = { sent: "Sent", failed: "Failed", pending: "Not sent" };
+
+function renderLastDraw() {
+  const { lastDraw } = state;
+  $("#last-draw").hidden = !lastDraw;
+  if (!lastDraw) {
+    return;
+  }
+  $("#last-draw-date").textContent = `Drawn ${new Date(lastDraw.date).toLocaleString()}`;
+  $("#last-draw-body").replaceChildren(
+    ...lastDraw.entries.map(entry =>
+      el(
+        "tr",
+        {},
+        el(
+          "td",
+          {},
+          el("strong", { textContent: entry.name }),
+          " ",
+          el("span", { className: "email", textContent: entry.email })
+        ),
+        el(
+          "td",
+          {},
+          el("span", {
+            className: `badge ${entry.status}`,
+            textContent: statusLabels[entry.status] || entry.status,
+            title: entry.error || (entry.sentAt ? new Date(entry.sentAt).toLocaleString() : "")
+          })
+        ),
+        el(
+          "td",
+          {},
+          el("button", {
+            className: "secondary small",
+            textContent: entry.status === "sent" ? "Resend" : "Send",
+            onclick: event => resendTo(entry, event.target)
+          })
+        )
+      )
+    )
+  );
+}
+
+async function resendTo(entry, button) {
+  button.disabled = true;
+  setStatus("#resend-status", "pending", `Sending to ${entry.name}…`);
+  try {
+    const result = await api("POST", "/api/resend", { email: entry.email, smtp: readSmtp() });
+    if (result.error) {
+      setStatus("#resend-status", "error", result.error);
+      return;
+    }
+    const [sent] = result.results;
+    state.lastDraw = result.lastDraw;
+    renderLastDraw();
+    setStatus(
+      "#resend-status",
+      sent.ok ? "success" : "error",
+      sent.ok ? `✅ Mail sent again to ${entry.name}.` : `❌ ${sent.to}: ${sent.error}`
+    );
+  } catch (error) {
+    setStatus("#resend-status", "error", error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
 
 function parseCsv(text) {
   return text
@@ -312,8 +400,9 @@ async function saveParticipants() {
 
 function confirmSend(count) {
   const dialog = $("#confirm-dialog");
-  $("#confirm-text").textContent =
-    `${count} participants will receive their Secret Santa by mail. Each new draw is different, so only do this once!`;
+  $("#confirm-text").textContent = state.lastDraw
+    ? `A draw was already made on ${new Date(state.lastDraw.date).toLocaleString()}. Sending again makes a brand new draw for all ${count} participants. To resend a lost mail, use "Last draw" below instead.`
+    : `${count} participants will receive their Secret Santa by mail. Each new draw is different, so only do this once!`;
   dialog.showModal();
   return new Promise(resolve => {
     dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok"), { once: true });
@@ -362,12 +451,15 @@ async function send(dryRun) {
       return;
     }
 
+    state.lastDraw = result.lastDraw;
+    renderLastDraw();
     const failed = result.results.filter(r => !r.ok);
     setStatus("#send-status", failed.length ? "error" : "success", [
       failed.length
         ? `${result.results.length - failed.length}/${result.results.length} mails sent.`
         : `🎉 ${result.results.length} mails sent! Merry Christmas!`,
       ...failed.map(r => `❌ ${r.to}: ${r.error}`),
+      failed.length ? 'You can retry them from "Last draw" below.' : null,
       ...warnings
     ]);
   } catch (error) {
@@ -386,6 +478,8 @@ async function init() {
   $("#mail-from").value = template.from;
   $("#mail-subject").value = template.subject;
   $("#mail-content").value = template.content;
+  $("#mail-budget").value = template.budget || "";
+  $("#mail-date").value = template.date || "";
 
   const smtp = { ...data.smtp, ...storage.get("smtp", {}) };
   $("#smtp-host").value = smtp.host;
@@ -395,11 +489,22 @@ async function init() {
   $("#smtp-password").placeholder = data.smtp.hasPassword ? "•••••• (from .env)" : "";
   $("#save-mails").checked = data.saveMails;
 
+  state.lastDraw = data.lastDraw;
+
   renderParticipants();
+  renderLastDraw();
   checkParticipants();
   updatePreview();
+  showPreview(storage.get("preview", "html"));
 
-  ["#mail-from", "#mail-subject", "#mail-content"].forEach(id => $(id).addEventListener("input", updatePreview));
+  document
+    .querySelectorAll(".tab")
+    .forEach(tab => tab.addEventListener("click", () => showPreview(tab.dataset.preview)));
+  $("#preview-html").addEventListener("load", fitPreview);
+
+  ["#mail-from", "#mail-subject", "#mail-content", "#mail-budget", "#mail-date"].forEach(id =>
+    $(id).addEventListener("input", updatePreview)
+  );
 
   ["#smtp-host", "#smtp-port", "#smtp-secure", "#smtp-user"].forEach(id =>
     $(id).addEventListener("change", () => {

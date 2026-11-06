@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -7,7 +7,8 @@ const { readParticipants, writeParticipants, normalize, validateParticipants } =
 const { draw } = require("./draw");
 const { renderMail } = require("./mails");
 const { verifySmtp } = require("./mailer");
-const { run } = require("./secretSanta");
+const { run, resend } = require("./secretSanta");
+const drawStore = require("./drawStore");
 
 const config = getConfig();
 const publicDir = path.join(__dirname, "..", "public");
@@ -64,7 +65,9 @@ function templateFrom(template = {}) {
   return {
     from: template.from || config.mail.from,
     subject: template.subject || config.mail.subject,
-    content: template.content || config.mail.content
+    content: template.content || config.mail.content,
+    budget: typeof template.budget === "string" ? template.budget.trim() : config.mail.budget,
+    date: typeof template.date === "string" ? template.date.trim() : config.mail.date
   };
 }
 
@@ -94,7 +97,8 @@ const routes = {
       hasPassword: Boolean(config.smtp.password)
     },
     saveMails: config.saveMails,
-    santasFile: config.santasFile
+    santasFile: config.santasFile,
+    lastDraw: drawStore.summarize(drawStore.readDraw(config.drawFile))
   }),
 
   "PUT /api/participants": async body => {
@@ -133,10 +137,19 @@ const routes = {
         smtp: smtpFrom(body.smtp),
         dryRun: Boolean(body.dryRun),
         save: Boolean(body.save),
-        mailsDir: config.mailsDir
+        mailsDir: config.mailsDir,
+        drawFile: config.drawFile
       });
     } catch (error) {
       return { error: error.message, ...(error.validation || {}) };
+    }
+  },
+
+  "POST /api/resend": async body => {
+    try {
+      return await resend(body.email, { smtp: smtpFrom(body.smtp), drawFile: config.drawFile });
+    } catch (error) {
+      return { error: error.message };
     }
   }
 };
