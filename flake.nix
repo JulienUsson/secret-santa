@@ -13,13 +13,11 @@
           };
         };
         node = pkgs.nodejs;
-        yarn = pkgs.yarn;
       in
       {
         devShell = pkgs.mkShell {
           buildInputs = [
             node
-            yarn
           ];
         };
       });
