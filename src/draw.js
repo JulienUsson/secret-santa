@@ -49,7 +49,7 @@ function draw(participants) {
   for (let attempt = 0; attempt < RANDOM_ATTEMPTS; attempt++) {
     const santas = shuffle(participants);
     if (isValidCycle(santas)) {
-      return toAssignments(santas);
+      return toAssignments(participants, santas);
     }
   }
 
@@ -57,13 +57,13 @@ function draw(participants) {
   if (!santas) {
     throw new Error("No valid draw exists with these exclusions. Try removing some of them.");
   }
-  return toAssignments(santas);
+  return toAssignments(participants, santas);
 }
 
-function toAssignments(santas) {
-  return santas.map((santa, i) => ({
+function toAssignments(participants, santas) {
+  return participants.map(santa => ({
     santa,
-    receiver: santas[(i + 1) % santas.length]
+    receiver: santas[(santas.indexOf(santa) + 1) % santas.length]
   }));
 }
 

@@ -1,24 +1,37 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const { getConfig } = require("./config");
 const { readParticipants } = require("./participants");
-const { run } = require("./secretSanta");
+const { run, resend } = require("./secretSanta");
 
 async function main() {
   const config = getConfig();
-  const participants = readParticipants(config.santasFile);
+  const argv = process.argv.slice(2);
+  const resendIndex = argv.indexOf("--resend");
+  const who = resendIndex >= 0 ? argv[resendIndex + 1] : undefined;
 
-  const { warnings, mails, results } = await run(participants, {
-    template: config.mail,
-    smtp: config.smtp,
-    dryRun: config.debug,
-    save: config.saveMails,
-    mailsDir: config.mailsDir
-  });
+  if (resendIndex >= 0 && !who) {
+    throw new Error("Usage: npm start -- --resend <email or name>");
+  }
+
+  const {
+    warnings = [],
+    mails,
+    results
+  } = who
+    ? await resend(who, { smtp: config.smtp, drawFile: config.drawFile, dryRun: config.debug })
+    : await run(readParticipants(config.santasFile), {
+        template: config.mail,
+        smtp: config.smtp,
+        dryRun: config.debug,
+        save: config.saveMails,
+        mailsDir: config.mailsDir,
+        drawFile: config.drawFile
+      });
 
   warnings.forEach(warning => console.warn(`⚠️  ${warning}`));
 
   if (mails) {
-    console.log(mails);
+    console.log(mails.map(({ html, ...mail }) => mail));
     return;
   }
 

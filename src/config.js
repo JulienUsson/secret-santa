@@ -15,10 +15,13 @@ function getConfig(env = process.env) {
     mail: {
       from: env.MAIL_FROM || env.MAIL_USER || "secret-santa@usson.me",
       subject: env.MAIL_SUBJECT || "🎅 Secret Santa 🎅",
-      content: env.MAIL_CONTENT || "You are the secret santa of {{people}} !"
+      content: env.MAIL_CONTENT || "You are the secret santa of {{people}} !",
+      budget: env.GIFT_BUDGET || "",
+      date: env.GIFT_DATE || ""
     },
     santasFile: env.SANTAS_FILE || "santas.csv",
     mailsDir: "mails",
+    drawFile: env.DRAW_FILE || "draw.json",
     saveMails: isTrue(env.SAVE_MAILS),
     debug: isTrue(env.DEBUG),
     guiPort: Number(env.GUI_PORT || 3000)
